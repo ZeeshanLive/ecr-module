@@ -37,15 +37,15 @@ resource "aws_ecr_repository" "this" {
 
 resource "aws_ecr_lifecycle_policy" "this" {
   for_each = {
-    for k, v in var.repositories :
-    k => v
-    if try(v.lifecycle_policy.rules, null) != null
+    for name, repo in var.repositories :
+    name => repo if repo.lifecycle_policy != null
   }
 
-  repository = aws_ecr_repository.this[each.key].name
-
-  policy = jsonencode({
+  repository = each.key
+  policy     = jsonencode({
     rules = each.value.lifecycle_policy.rules
   })
+
+  region = var.region
 }
 
