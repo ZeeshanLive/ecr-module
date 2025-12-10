@@ -45,7 +45,7 @@ resource "aws_ecr_lifecycle_policy" "this" {
   for_each = {
     for repo_name, repo_cfg in local.repos :
     repo_name => repo_cfg
-    if try(repo_cfg.lifecycle_policy, null) != null
+    if can(repo_cfg.lifecycle_policy.rules) && length(repo_cfg.lifecycle_policy.rules) > 0
   }
 
   repository = each.key
