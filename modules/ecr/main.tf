@@ -41,6 +41,9 @@ resource "aws_ecr_repository" "this" {
 # -------------------------------
 # LIFECYCLE POLICIES (Optional)
 # -------------------------------
+# -------------------------------
+# LIFECYCLE POLICIES (Optional)
+# -------------------------------
 resource "aws_ecr_lifecycle_policy" "this" {
   for_each = {
     for repo_name, repo_cfg in local.repos :
@@ -51,7 +54,25 @@ resource "aws_ecr_lifecycle_policy" "this" {
   repository = each.key
   region     = var.region
 
+  # Use jsonencode with compact option to avoid null values
   policy = jsonencode({
-    rules = each.value.lifecycle_policy.rules
+    rules = [
+      for rule in each.value.lifecycle_policy.rules : {
+        rulePriority = rule.rulePriority
+        description  = lookup(rule, "description", null)
+        selection = {
+          tagStatus     = rule.selection.tagStatus
+          tagPrefixList = lookup(rule.selection, "tagPrefixList", null)
+          tagPatternList = lookup(rule.selection, "tagPatternList", null)
+          countType     = rule.selection.countType
+          countUnit     = lookup(rule.selection, "countUnit", null)
+          countNumber   = lookup(rule.selection, "countNumber", null)
+        }
+        action = {
+          type = rule.action.type
+          targetStorageClass = lookup(rule.action, "targetStorageClass", null)
+        }
+      }
+    ]
   })
 }
