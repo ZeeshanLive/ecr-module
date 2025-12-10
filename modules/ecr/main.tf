@@ -1,5 +1,6 @@
 terraform {
   required_version = ">= 1.6.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -9,34 +10,35 @@ terraform {
 }
 
 locals {
-  repositories = var.repositories
+  repos = var.repositories
 }
 
 resource "aws_ecr_repository" "this" {
-  for_each = local.repositories
+  for_each = local.repos
 
   name                 = each.key
   image_tag_mutability = lookup(each.value, "image_tag_mutability", "IMMUTABLE")
 
   encryption_configuration {
-    encryption_type = lookup(each.value.encryption_configuration, "encryptionType", "AES256")
+    encryption_type = each.value.encryption_configuration.encryptionType
+    # kms_key = each.value.encryption_configuration.kmsKeyId
   }
 
   image_scanning_configuration {
-    scan_on_push = lookup(each.value.image_scanning_configuration, "scanOnPush", false)
+    scan_on_push = each.value.image_scanning_configuration.scanOnPush
   }
 }
 
 resource "aws_ecr_lifecycle_policy" "this" {
   for_each = {
-    for key, repo in local.repositories :
-    key => repo
-    if lookup(repo, "lifecycle_policy", null) != null
+    for name, cfg in local.repos :
+    name => cfg
+    if contains(keys(cfg), "lifecycle_policy")
   }
 
-  repository = each.key
+  repository = aws_ecr_repository.this[each.key].name
 
-  policy = templatefile("${path.module}/lifecycle.tpl.json", {
+  policy = jsonencode({
     rules = each.value.lifecycle_policy.rules
   })
 }
