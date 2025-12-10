@@ -1,0 +1,34 @@
+{
+  "rules": [
+    %{ for rule in rules ~}
+    {
+      "rulePriority": ${rule.rulePriority},
+      %{ if rule.description != null && rule.description != "" ~}
+      "description": "${rule.description}",
+      %{ endif ~}
+      "selection": {
+        "tagStatus": "${rule.selection.tagStatus}",
+        %{ if rule.selection.tagPatternList != null && length(rule.selection.tagPatternList) > 0 ~}
+        "tagPatternList": ${jsonencode(rule.selection.tagPatternList)},
+        %{ endif ~}
+        %{ if rule.selection.tagPrefixList != null && length(rule.selection.tagPrefixList) > 0 ~}
+        "tagPrefixList": ${jsonencode(rule.selection.tagPrefixList)},
+        %{ endif ~}
+        "countType": "${rule.selection.countType}",
+        %{ if rule.selection.countUnit != null && rule.selection.countUnit != "" ~}
+        "countUnit": "${rule.selection.countUnit}",
+        %{ endif ~}
+        %{ if rule.selection.countNumber != null ~}
+        "countNumber": ${rule.selection.countNumber}
+        %{ endif ~}
+      },
+      "action": {
+        "type": "${rule.action.type}"
+        %{ if rule.action.targetStorageClass != null && rule.action.targetStorageClass != "" ~}
+        ,"targetStorageClass": "${rule.action.targetStorageClass}"
+        %{ endif ~}
+      }
+    }%{ if rule != rules[length(rules)-1] ~},%{ endif ~}
+    %{ endfor ~}
+  ]
+}
