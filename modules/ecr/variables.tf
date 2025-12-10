@@ -1,7 +1,7 @@
 variable "repositories" {
   description = "Map of ECR repositories to create"
   type = map(object({
-    image_tag_mutability = optional(string)
+    image_tag_mutability = optional(string, "IMMUTABLE")
 
     encryption_configuration = object({
       encryptionType = string
@@ -13,7 +13,7 @@ variable "repositories" {
     })
 
     lifecycle_policy = optional(object({
-      rules = list(object({
+      rules = optional(list(object({
         rulePriority = number
         description  = optional(string)
 
@@ -30,7 +30,7 @@ variable "repositories" {
           type               = string
           targetStorageClass = optional(string)
         })
-      }))
-    }))
+      })), [])
+    }), null)
   }))
 }
