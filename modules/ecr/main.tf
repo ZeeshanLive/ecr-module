@@ -9,6 +9,10 @@ terraform {
   }
 }
 
+terraform {
+  backend "local" {}
+}
+
 locals {
   repos = var.repositories
 }
