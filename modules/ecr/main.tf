@@ -1,4 +1,8 @@
 terraform {
+  backend "local" {}
+}
+
+terraform {
   required_version = ">= 1.6.0"
 
   required_providers {
@@ -9,9 +13,7 @@ terraform {
   }
 }
 
-terraform {
-  backend "local" {}
-}
+
 
 locals {
   repos = var.repositories
