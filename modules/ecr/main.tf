@@ -13,12 +13,13 @@ terraform {
   }
 }
 
-
-
 locals {
   repos = var.repositories
 }
 
+# -------------------------------
+# ECR REPOSITORIES
+# -------------------------------
 resource "aws_ecr_repository" "this" {
   for_each = local.repos
 
@@ -27,7 +28,6 @@ resource "aws_ecr_repository" "this" {
 
   encryption_configuration {
     encryption_type = each.value.encryption_configuration.encryptionType
-    # kms_key = each.value.encryption_configuration.kmsKeyId
   }
 
   image_scanning_configuration {
@@ -35,15 +35,19 @@ resource "aws_ecr_repository" "this" {
   }
 }
 
-
-
+# -------------------------------
+# LIFECYCLE POLICIES
+# -------------------------------
 resource "aws_ecr_lifecycle_policy" "this" {
+  # Only include repos that contain lifecycle_policy
   for_each = {
-    for k, v in var.repositories :
-    k => v if v.lifecycle_policy != null
+    for repo_name, repo_cfg in local.repos :
+    repo_name => repo_cfg
+    if try(repo_cfg.lifecycle_policy.rules, null) != null
   }
 
-  repository = each.key
+  repository = aws_ecr_repository.this[each.key].name
+
   policy = jsonencode({
     rules = each.value.lifecycle_policy.rules
   })
