@@ -41,6 +41,7 @@ resource "aws_ecr_repository" "this" {
 # -------------------------------
 # LIFECYCLE POLICIES (Optional)
 # -------------------------------
+# In main.tf
 resource "aws_ecr_lifecycle_policy" "this" {
   for_each = {
     for name, cfg in local.repos :
@@ -50,31 +51,7 @@ resource "aws_ecr_lifecycle_policy" "this" {
 
   repository = each.key
 
-  policy = jsonencode({
-    rules = [
-      for rule in each.value.rules : {
-        # Build rule dynamically, only including non-null fields
-        for key, value in {
-          rulePriority = rule.rulePriority
-          description  = lookup(rule, "description", null) != null ? rule.description : null
-          selection = {
-            for skey, svalue in {
-              tagStatus     = rule.selection.tagStatus
-              tagPrefixList = lookup(rule.selection, "tagPrefixList", null)
-              tagPatternList = lookup(rule.selection, "tagPatternList", null)
-              countType     = rule.selection.countType
-              countUnit     = lookup(rule.selection, "countUnit", null)
-              countNumber   = lookup(rule.selection, "countNumber", null)
-            } : skey => svalue if svalue != null
-          }
-          action = {
-            for akey, avalue in {
-              type               = rule.action.type
-              targetStorageClass = lookup(rule.action, "targetStorageClass", null)
-            } : akey => avalue if avalue != null
-          }
-        } : key => value if value != null
-      }
-    ]
+  policy = templatefile("${path.module}/lifecycle-policy.json.tmpl", {
+    rules = each.value.rules
   })
 }
