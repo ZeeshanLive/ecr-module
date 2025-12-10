@@ -36,20 +36,20 @@ resource "aws_ecr_repository" "this" {
 }
 
 # -------------------------------
-# LIFECYCLE POLICIES
+# LIFECYCLE POLICIES (Optional)
 # -------------------------------
 resource "aws_ecr_lifecycle_policy" "this" {
   for_each = {
     for repo_name, repo_cfg in local.repos :
     repo_name => repo_cfg
-    if try(repo_cfg.lifecycle_policy, null) != null
+    if contains(keys(repo_cfg), "lifecycle_policy") && repo_cfg.lifecycle_policy != null
   }
 
-  repository = aws_ecr_repository.this[each.key].name
+  repository = each.key
+  region     = var.region
 
+  # Safely encode rules, fallback to empty list just in case
   policy = jsonencode({
-    rules = each.value.lifecycle_policy.rules
+    rules = try(each.value.lifecycle_policy.rules, [])
   })
-
-  region = var.region
 }
