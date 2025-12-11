@@ -36,72 +36,17 @@ resource "aws_ecr_repository" "this" {
 }
 
 # -------------------------------
-# LIFECYCLE POLICIES (Optional)
-# -------------------------------
-# -------------------------------
-# LIFECYCLE POLICIES (Optional)
-# -------------------------------
-# In main.tf
-# -------------------------------
-# LIFECYCLE POLICIES (Optional) - SIMPLE VERSION
+# LIFECYCLE POLICIES (Optional) - FROM JSON FILES
 # -------------------------------
 resource "aws_ecr_lifecycle_policy" "this" {
   for_each = {
     for name, cfg in local.repos :
-    name => cfg.lifecycle_policy
-    if try(cfg.lifecycle_policy, null) != null && try(length(cfg.lifecycle_policy.rules), 0) > 0
+    name => cfg
+    if try(cfg.lifecycle_policy, null) != null
   }
 
   repository = each.key
 
-  # Build clean JSON without any nulls
-  policy = jsonencode({
-    rules = [
-      for rule in each.value.rules : {
-        # Required field
-        rulePriority = rule.rulePriority
-        # Build selection - VERY carefully
-        selection = {
-          tagStatus = rule.selection.tagStatus
-          countType = rule.selection.countType
-          # Only add these if they exist and are not null/empty
-          tagPatternList = can(rule.selection.tagPatternList) && rule.selection.tagPatternList != null && length(rule.selection.tagPatternList) > 0 ? rule.selection.tagPatternList : null
-          tagPrefixList = can(rule.selection.tagPrefixList) && rule.selection.tagPrefixList != null && length(rule.selection.tagPrefixList) > 0 ? rule.selection.tagPrefixList : null
-          countUnit = can(rule.selection.countUnit) && rule.selection.countUnit != null && rule.selection.countUnit != "" ? rule.selection.countUnit : null
-          countNumber = can(rule.selection.countNumber) && rule.selection.countNumber != null ? rule.selection.countNumber : null
-        }
-        # Build action
-        action = {
-          type = rule.action.type
-          targetStorageClass = can(rule.action.targetStorageClass) && rule.action.targetStorageClass != null && rule.action.targetStorageClass != "" ? rule.action.targetStorageClass : null
-        }
-      }
-    ]
-  })
-
-  # Post-process the JSON to remove nulls
-  lifecycle {
-    precondition {
-      condition     = can(jsondecode(replace(replace(jsonencode({
-        rules = [
-          for rule in each.value.rules : {
-            rulePriority = rule.rulePriority
-            selection = {
-              tagStatus = rule.selection.tagStatus
-              countType = rule.selection.countType
-              tagPatternList = can(rule.selection.tagPatternList) && rule.selection.tagPatternList != null && length(rule.selection.tagPatternList) > 0 ? rule.selection.tagPatternList : null
-              tagPrefixList = can(rule.selection.tagPrefixList) && rule.selection.tagPrefixList != null && length(rule.selection.tagPrefixList) > 0 ? rule.selection.tagPrefixList : null
-              countUnit = can(rule.selection.countUnit) && rule.selection.countUnit != null && rule.selection.countUnit != "" ? rule.selection.countUnit : null
-              countNumber = can(rule.selection.countNumber) && rule.selection.countNumber != null ? rule.selection.countNumber : null
-            }
-            action = {
-              type = rule.action.type
-              targetStorageClass = can(rule.action.targetStorageClass) && rule.action.targetStorageClass != null && rule.action.targetStorageClass != "" ? rule.action.targetStorageClass : null
-            }
-          }
-        ]
-      }), ":null", ":null"), ":null,", ":null,")))
-      error_message = "Generated JSON contains null values"
-    }
-  }
+  # Read the JSON file directly
+  policy = file(each.value.lifecycle_policy)
 }
