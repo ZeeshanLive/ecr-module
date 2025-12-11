@@ -12,25 +12,6 @@ variable "repositories" {
       scanOnPush = bool
     })
 
-    lifecycle_policy = optional(object({
-      rules = optional(list(object({
-        rulePriority = number
-        description  = optional(string)
-
-        selection = object({
-          tagStatus       = string
-          tagPatternList  = optional(list(string))
-          tagPrefixList   = optional(list(string))
-          countType       = string
-          countUnit       = optional(string)
-          countNumber     = optional(number)
-        })
-
-        action = object({
-          type               = string
-          targetStorageClass = optional(string)
-        })
-      })), [])
-    }), null)
+    lifecycle_policy = optional(string, null)  # Now a string path to JSON file
   }))
 }
