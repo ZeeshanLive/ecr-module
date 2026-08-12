@@ -24,7 +24,8 @@ resource "aws_ecr_repository" "this" {
   for_each = local.repos
 
   name                 = each.key
-  image_tag_mutability = lookup(each.value, "image_tag_mutability", "IMMUTABLE")
+  #image_tag_mutability = lookup(each.value, "image_tag_mutability", "IMMUTABLE")
+  image_tag_mutability = "MUTABLE"
 
   encryption_configuration {
     encryption_type = each.value.encryption_configuration.encryptionType
