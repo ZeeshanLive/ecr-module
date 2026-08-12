@@ -1,5 +1,5 @@
 variable "repositories" {
-  description = "Map of ECR repositories to create"
+  description = "Map of ECR repositories to create to our PR"
   type = map(object({
     image_tag_mutability = optional(string, "IMMUTABLE")
 

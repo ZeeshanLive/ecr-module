@@ -9,3 +9,6 @@ output "debug_lifecycle_policies" {
     }
   }
 }
+output "test" {
+value = "test"
+}
